@@ -1,52 +1,10 @@
-#include "glib.h"
-#include <cmath>
-#include <cstdio>
-#include <gtk/gtk.h>
-#include <stdlib.h>
-#include <math.h>
+#include "mandelbrot_algo.h"
 
-/*
-g++ -O3 mandelbrot1.cpp -o mandelbrot1 `pkg-config --cflags --libs gtk+-3.0` -lm
-./mandelbrot1
-
-TESTS
-g++ -O0 -D MEASURE_MANDELBROT mandelbrot1_test_new.cpp -o mandelbrot1 `pkg-config --cflags --libs gtk+-3.0` -lm
-g++ -O3 -D MEASURE_MANDELBROT mandelbrot1_test_new.cpp -o mandelbrot1 `pkg-config --cflags --libs gtk+-3.0` -lm
-
-taskset -c 4 ./mandelbrot1
-*/
-
-const int ACCURACY = 1;
-const int WIDTH = 800;
-const int SUPER_WIDTH = WIDTH * ACCURACY;
-const int HEIGHT = 600;
-const int SUPER_HEIGHT = HEIGHT * ACCURACY;
-
-const int COUNTER = 1000;
-const int HEAT_TESTS = 20;
-const int nMax = 255;
-const int Rmax = 10;
-const double SCALE = 3.5;
-const double BEAUTY_COEF = -0.6;
-const int RGB = 255;
-const double DX = 1.0/(double)(SUPER_WIDTH);
-const double DY = 1.0/(double)(SUPER_HEIGHT);
-const double DELTA = 0.1;
-
-
-struct maldebrot_params{
-    GtkWidget *drawing_area;
-    int PALETTE[RGB + 1];
-    double zoom;
-    double center_x;
-    double center_y;
-};
+const int NUM_OF_TESTS = 200;
 
 GtkWidget *create_window(maldebrot_params* params);
 
 GtkWidget *create_drawing_area(maldebrot_params* params);
-
-static void generate_mandelbrot(maldebrot_params* params, int* color_maldebrot);
 
 static void draw_maldebrot(GtkWidget *widget, cairo_t *cr, gpointer data);
 
@@ -54,16 +12,22 @@ static void generate_palette(maldebrot_params* params);
 
 static void zoom_graphic(GtkWidget *widget, GdkEventKey *event, gpointer data);
 
-static void test_mandelbrot(maldebrot_params* params);
+static void test_mandelbrot(maldebrot_params* params, int N_tests, int heat_tests);
 
 int main(int argc, char*argv[]){
     maldebrot_params* params = (maldebrot_params*)calloc(sizeof(maldebrot_params), 1);
     params->zoom = 1.0;
     generate_palette(params);
 
-#ifdef MEASURE_MANDELBROT
-    test_mandelbrot(params);
-#endif //MEASURE_MANDELBROT
+    if (argc == 4 && !strcmp(argv[1], "--measure")){
+        int N = atoi(argv[2]);
+        int heat = atoi(argv[3]);
+
+        test_mandelbrot(params, N, heat);
+
+        free(params);
+        return 0;
+    }
 
     gtk_init(&argc, &argv);
 
@@ -89,43 +53,38 @@ int main(int argc, char*argv[]){
     return 0;
 }
 
-static void test_mandelbrot(maldebrot_params* params){
-    FILE* results = NULL;
-    double run_time = 0;
-    int* color_maldebrot = NULL;
-#if defined (O0_opt)
-    results = fopen("results/results_v1_O0.csv", "a+");
-#elif defined (O1_opt)
-    results = fopen("results/results_v1_O1.csv", "a+");
-#elif defined (O2_opt)
-    results = fopen("results/results_v1_O2.csv", "a+");
-#elif defined (O3_opt)
-    results = fopen("results/results_v1_O3.csv", "a+");
-#endif // file choose
+static void test_mandelbrot(maldebrot_params* params, int N_tests, int heat_tests){
+    int* color_maldebrot = (int*)calloc(SUPER_WIDTH * SUPER_HEIGHT, sizeof(int));
+    double* tests_results = (double*)calloc(N_tests, sizeof(double));
+
     timespec start = {};
     timespec end = {};
-    for(int i = 0; i < COUNTER + HEAT_TESTS; i++){
-        color_maldebrot = (int*)calloc(SUPER_WIDTH * SUPER_HEIGHT, sizeof(int));
+
+    fprintf(stderr, "testing started\n");
+
+    for(int i = 0; i < N_tests + heat_tests; i++){
 
         clock_gettime(CLOCK_MONOTONIC, &start);
-        generate_mandelbrot(params, color_maldebrot);
+
+        for(int j = 0; j < NUM_OF_TESTS; j++)
+            generate_mandelbrot(params, color_maldebrot);
+
         clock_gettime(CLOCK_MONOTONIC, &end);
 
-        run_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-        if(i >= HEAT_TESTS){
-        #ifdef __clang__
-            fprintf(results, "v1;clang++;%lg\n", run_time);
-        #elif defined(__GNUC__)
-            fprintf(results, "v1;g++;%lg\n", run_time);
-        #endif // compilator
-        }
-        printf("Test %d ended\n", i);
+        if(i >= heat_tests)
+            tests_results[i - heat_tests] = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
 
-        printf("%d\n", color_maldebrot[1]); //чтобы компилятор не оптимизировал и не убирал вызов функции
-
-        free(color_maldebrot);
     }
-    fclose(results);
+
+    fprintf(stderr, "testing ended\n");
+
+    free(color_maldebrot);
+
+    for(int i = 0; i < N_tests; i++){
+        printf("%lg\n", tests_results[i]);
+    }
+
+    free(tests_results);
 }
 
 GtkWidget *create_window(maldebrot_params* params){
@@ -156,39 +115,6 @@ static void generate_palette(maldebrot_params* params){
     } 
 }
 
-static void generate_mandelbrot(maldebrot_params* params, int* color_maldebrot){
-
-    double dx = DX * SCALE * params->zoom;
-
-    for(int i_for_y = 0; i_for_y < SUPER_HEIGHT; i_for_y++){
-
-        double y0 = ((i_for_y - (double)SUPER_HEIGHT / 2) * DY) * SCALE * params->zoom + params->center_y;
-        double x0 = ((- (double)SUPER_WIDTH / 2) * DX) * SCALE * params->zoom + params->center_x + BEAUTY_COEF * params->zoom;
-
-        for(int i_for_x = 0; i_for_x < SUPER_WIDTH; i_for_x++, x0 += dx){
-
-            double x = x0;
-            double y = y0;
-
-            int n = 0;
-            for(; n < nMax; n++){
-                double x2 = x * x;
-                double y2 = y * y;
-                double xy = x * y;
-
-                double R2 = x2 + y2;
-                if(R2 >= Rmax) break;
-
-                x = x2 - y2 + x0;
-                y = 2*xy + y0;
-            }
-
-            color_maldebrot[i_for_x + i_for_y * SUPER_WIDTH] = params->PALETTE[n];
-            
-        }
-    }
-
-}
 
 static void draw_maldebrot(GtkWidget *widget, cairo_t *cr, gpointer data){
     maldebrot_params* params = (maldebrot_params*)data;    
@@ -239,3 +165,5 @@ static void zoom_graphic(GtkWidget *widget, GdkEventKey *event, gpointer data){
             break;
     }
 }
+
+// gcc -S file.c -o file
