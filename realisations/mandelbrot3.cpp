@@ -6,6 +6,8 @@ void generate_mandelbrot(maldebrot_params* params, int* color_maldebrot){
     __m256d vRmax = _mm256_set1_pd(Rmax);
 
     double dx = DX * SCALE_X * params->zoom;
+    double arr_idx[4] = {0,dx,2 * dx,3 * dx};
+    __m256d idx = _mm256_loadu_pd(arr_idx);
 
     for(int i_for_y = 0; i_for_y < SUPER_HEIGHT; i_for_y++){
 
@@ -15,9 +17,6 @@ void generate_mandelbrot(maldebrot_params* params, int* color_maldebrot){
         __m256d y0 = _mm256_set1_pd(Y0);
         
         for(int i_for_x = 0; i_for_x < SUPER_WIDTH; i_for_x+=4, X0 += dx*4){
-
-            double arr_idx[4] = {0,dx,2 * dx,3 * dx};
-            __m256d idx = _mm256_loadu_pd(arr_idx);
             __m256d x0_v = _mm256_set1_pd(X0);
             __m256d x0 = _mm256_add_pd(x0_v, idx);
 

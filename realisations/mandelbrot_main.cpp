@@ -1,6 +1,6 @@
 #include "mandelbrot_algo.h"
 
-const int NUM_OF_TESTS = 200;
+const int NUM_OF_TESTS = 100;
 
 GtkWidget *create_window(maldebrot_params* params);
 
