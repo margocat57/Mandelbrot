@@ -15,7 +15,7 @@ $(TARGET): $(SRC)
 
 run: $(TARGET)
 	$(if $(MEASURE), \
-		taskset -c 4 ./$(TARGET) --measure $(MEASURE) > result.txt && \
+		taskset -c 3 ./$(TARGET) --measure $(MEASURE) > result.txt && \
 		python3 script.py $(TARGET) $(COMPILER) $(OPT) < result.txt, \
 		./$(TARGET))
 
