@@ -24,7 +24,7 @@ $$
 
 Пример построенного множества:
 
-<img src="Mandelbrot_files/tests_img/Screenshot_20260423_214228.png" width="80%">
+<img src="Mandelbrot_files/tests_img/Screenshot_20260423_214228.png">
 
 ## План работы
 
@@ -129,11 +129,11 @@ $$
 
 g++ :
 
-<img src="Mandelbrot_files/godbolt_img/1_2.png" width="80%">
+<img src="Mandelbrot_files/godbolt_img/1_2.png">
 
 clang++:
 
-<img src="Mandelbrot_files/godbolt_img/1_2_cyc.png" width="80%">
+<img src="Mandelbrot_files/godbolt_img/1_2_cyc.png">
 
 g++ чаще выполняет обращения к памяти внутри цикла, тогда как clang++ активнее удерживает промежуточные значения в регистрах и старается вынести обращения к памяти за пределы цикла. Особенно это можно видеть если посмотреть на ассемблерный код, сгенерированный компиляторами для 
 ```c
@@ -142,11 +142,11 @@ double y0 = ((i_for_y - (double)SUPER_HEIGHT / 2) * DY) * SCALE_Y * params->zoom
 
 g++ :
 
-<img src="Mandelbrot_files/godbolt_img/1_1gcc.png" width="80%">
+<img src="Mandelbrot_files/godbolt_img/1_1gcc.png">
 
 clang++:
 
-<img src="Mandelbrot_files/godbolt_img/1_1clang.png" width="80%">
+<img src="Mandelbrot_files/godbolt_img/1_1clang.png">
 
 При этом при попарном сравнении уровней оптимизации внутри каждого компилятора (g++ -O2 vs g++ -O3 и clang++ -O2 vs clang++ -O3) ассемблерный код функции `generate_mandelbrot` не изменяется.
 
@@ -192,22 +192,22 @@ clang++ преобразует цикл в векторный вариант с 
 
 g++ :
 
-<img src="Mandelbrot_files/godbolt_img/2_2gcc.png" width="80%">
+<img src="Mandelbrot_files/godbolt_img/2_2gcc.png">
 
 clang++:
 
-<img src="Mandelbrot_files/godbolt_img/2_2clang.png" width="80%">
+<img src="Mandelbrot_files/godbolt_img/2_2clang.png">
 
 
 Кроме того, clang++ выполняет развёртку циклов, в то время как g++ этого не делает.
 
 g++ :
 
-<img src="Mandelbrot_files/godbolt_img/2_3gcc.png" width="80%">
+<img src="Mandelbrot_files/godbolt_img/2_3gcc.png">
 
 clang++:
 
-<img src="Mandelbrot_files/godbolt_img/2_3clang.png" width="80%">
+<img src="Mandelbrot_files/godbolt_img/2_3clang.png">
 
 #### Сравнение ассемлерного кода, сгенерированного компилятором g++ при флагах -О2 и -О3
 
@@ -225,11 +225,11 @@ for(int j = 0; j < 4; j++){ y2[j] = y[j] * y[j]; }
 
 g++ -O2 :
 
-<img src="Mandelbrot_files/godbolt_img/2_4gcc.png" width="80%">
+<img src="Mandelbrot_files/godbolt_img/2_4gcc.png">
 
 g++ -O3 :
 
-<img src="Mandelbrot_files/godbolt_img/2_4c.png" width="80%">
+<img src="Mandelbrot_files/godbolt_img/2_4c.png">
 
 Ассемблерный код, сгенерированный компилятором clang++ при уровнях оптимизации -O2 и -O3 совпадает, что согласуется с результатами измерений - статистически значимых различий во времени выполнения программы не наблюдается.
 
@@ -266,11 +266,11 @@ g++ -O3 :
 
 g++ :
 
-<img src="Mandelbrot_files/godbolt_img/3.png" width="80%">
+<img src="Mandelbrot_files/godbolt_img/3.png">
 
 clang++:
 
-<img src="Mandelbrot_files/godbolt_img/3c.png" width="80%">
+<img src="Mandelbrot_files/godbolt_img/3c.png">
 
 При этом при попарном сравнении уровней оптимизации внутри каждого компилятора (g++ -O2 vs g++ -O3 и clang++ -O2 vs clang++ -O3) ассемблерный код функции `generate_mandelbrot` не изменяется.
 
