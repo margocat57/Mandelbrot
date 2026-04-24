@@ -330,8 +330,6 @@ clang++:
 
 ## Сборка и запуск
 
-Если вы хотите самостоятельно собрать и запустить проект, выполните следующие команды:
-
 ```
 cd Mandelbrot_files
 make TARGET=<mandelbrot1 | mandelbrot2 | mandelbrot3>  COMPILER=<g++ | clang++> OPT=<O0 | O1 |O2 | O3> run
